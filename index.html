@@ -1,0 +1,847 @@
+```html
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Media Pembelajaran Fisika: Sistem Pengukuran</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter & Fira Code -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Canvas Confetti for High Score celebration -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['Fira Code', 'monospace']
+                    },
+                    colors: {
+                        physics: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            900: '#0c4a6e',
+                            dark: '#0b1329',
+                            card: '#131e3a',
+                            accent: '#6366f1'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #0b1329;
+            color: #e2e8f0;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+        
+        .glass-panel {
+            background: rgba(19, 30, 58, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .glass-input {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+        }
+
+        .glass-input:focus {
+            border-color: #38bdf8;
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.3);
+            outline: none;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0b1329;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #38bdf8;
+        }
+
+        /* Vernier scale slider & interactive elements */
+        input[type=range] {
+            accent-color: #38bdf8;
+        }
+
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #printable-report, #printable-report * {
+                visibility: visible;
+            }
+            #printable-report {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                color: #000;
+                background: #fff;
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-physics-500 selection:text-white">
+
+    <!-- LOGIN MODAL / LOGIN SCREEN -->
+    <div id="login-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-physics-dark/95 backdrop-blur-md">
+        <div class="glass-panel p-8 rounded-3xl max-w-md w-full shadow-2xl border border-physics-400/30 text-center relative overflow-hidden">
+            <!-- Glow Effect -->
+            <div class="absolute -top-12 -left-12 w-32 h-32 bg-physics-500/30 rounded-full blur-3xl"></div>
+            <div class="absolute -bottom-12 -right-12 w-32 h-32 bg-physics-accent/30 rounded-full blur-3xl"></div>
+
+            <div class="inline-flex items-center justify-center w-20 h-20 bg-physics-500/10 rounded-2xl border border-physics-400/40 text-physics-400 mb-6 text-3xl shadow-inner">
+                <i class="fa-solid fa-atom fa-spin" style="animation-duration: 12s;"></i>
+            </div>
+            
+            <h1 class="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-physics-400 via-indigo-300 to-purple-400 bg-clip-text text-transparent mb-2">
+                FISIKA INTERAKTIF
+            </h1>
+            <p class="text-slate-400 text-sm mb-6">Sistem Pengukuran & Analisis Data Eksperimen • MAS KERTABUMI</p>
+
+            <form id="form-login" onsubmit="handleLogin(event)" class="space-y-4 text-left">
+                <div>
+                    <label class="block text-xs font-semibold text-physics-400 uppercase tracking-wider mb-2">Nama Lengkap Siswa</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-user absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <input type="text" id="input-nama" required placeholder="Masukkan nama lengkap..." class="w-full glass-input pl-11 pr-4 py-3 rounded-xl text-white placeholder-slate-500 text-sm">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-physics-400 uppercase tracking-wider mb-2">Kelas / Rombel</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-graduation-cap absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <select id="input-kelas" required class="w-full glass-input pl-11 pr-4 py-3 rounded-xl text-white text-sm bg-physics-dark cursor-pointer">
+                            <option value="" disabled selected>Pilih Kelas...</option>
+                            <option value="X-1">X-1 (Fase E)</option>
+                            <option value="X-2">X-2 (Fase E)</option>
+                            <option value="X-3">X-3 (Fase E)</option>
+                            <option value="X-4">X-4 (Fase E)</option>
+                            <option value="X-5">X-5 (Fase E)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full mt-6 py-3.5 px-6 rounded-xl bg-gradient-to-r from-physics-500 to-physics-accent hover:from-physics-400 hover:to-indigo-500 text-white font-semibold shadow-lg shadow-physics-500/25 transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2">
+                    <span>Mulai Petualangan Belajar</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MAIN APP STRUCTURE -->
+    <div id="app" class="hidden flex-col min-h-screen">
+        
+        <!-- HEADER / NAVBAR -->
+        <header class="glass-panel sticky top-0 z-40 border-b border-slate-800/80 px-4 lg:px-8 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-physics-500/20 border border-physics-400/40 flex items-center justify-center text-physics-400 font-bold text-xl">
+                    <i class="fa-solid fa-ruler-combined"></i>
+                </div>
+                <div>
+                    <h2 class="font-bold text-base md:text-lg text-white leading-tight">Physics Lab: Sistem Pengukuran</h2>
+                    <p class="text-xs text-physics-400">Fase E / Kelas 10 MAS KERTABUMI</p>
+                </div>
+            </div>
+
+            <!-- Profile Info Card & Mobile Menu Toggle -->
+            <div class="flex items-center gap-4">
+                <div class="hidden md:flex items-center gap-3 px-4 py-2 rounded-xl bg-slate-900/60 border border-slate-700/50">
+                    <div class="w-8 h-8 rounded-full bg-physics-500 flex items-center justify-center text-white font-bold text-xs" id="user-avatar">
+                        S
+                    </div>
+                    <div class="text-xs">
+                        <p class="font-semibold text-slate-200" id="user-display-name">Siswa</p>
+                        <p class="text-slate-400" id="user-display-class">Kelas X</p>
+                    </div>
+                    <button onclick="logout()" title="Keluar / Ganti Akun" class="text-slate-400 hover:text-red-400 ml-2 transition">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </button>
+                </div>
+
+                <button id="mobile-menu-btn" onclick="toggleMobileNav()" class="md:hidden text-slate-300 hover:text-white p-2">
+                    <i class="fa-solid fa-bars text-xl"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- MAIN LAYOUT (SIDEBAR + CONTENT) -->
+        <div class="flex-1 flex flex-col md:flex-row">
+            
+            <!-- NAVIGATION SIDEBAR -->
+            <aside id="sidebar-nav" class="hidden md:flex flex-col w-full md:w-64 glass-panel border-r border-slate-800 p-4 shrink-0 gap-2">
+                <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider px-3 py-2">Navigasi Modul</div>
+
+                <button onclick="switchTab('materi')" id="nav-materi" class="nav-btn active flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all bg-physics-500/20 text-physics-400 border border-physics-500/30">
+                    <i class="fa-solid fa-book-open text-base"></i>
+                    <span>1. Materi Lengkap</span>
+                </button>
+
+                <button onclick="switchTab('simulasi')" id="nav-simulasi" class="nav-btn flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all text-slate-300 hover:bg-slate-800/60 hover:text-white">
+                    <i class="fa-solid fa-flask text-base"></i>
+                    <span>2. Laboratorium Maya</span>
+                </button>
+
+                <button onclick="switchTab('kuis')" id="nav-kuis" class="nav-btn flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all text-slate-300 hover:bg-slate-800/60 hover:text-white">
+                    <i class="fa-solid fa-gamepad text-base"></i>
+                    <span>3. Kuis Latihan (50)</span>
+                </button>
+
+                <button onclick="switchTab('evaluasi')" id="nav-evaluasi" class="nav-btn flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all text-slate-300 hover:bg-slate-800/60 hover:text-white">
+                    <i class="fa-solid fa-award text-base"></i>
+                    <span>4. Evaluasi Akhir</span>
+                </button>
+
+                <div class="mt-auto p-4 rounded-xl bg-slate-900/80 border border-slate-800 text-xs text-slate-400">
+                    <p class="font-semibold text-slate-300 mb-1"><i class="fa-solid fa-circle-info text-physics-400 mr-1"></i> Petunjuk</p>
+                    Pelajari materi, uji pemahaman di lab simulasi & kuis latihan sebelum mengerjakan Evaluasi Akhir.
+                </div>
+            </aside>
+
+            <!-- CONTENT DISPLAY CONTAINER -->
+            <main class="flex-1 p-4 lg:p-8 max-w-7xl mx-auto w-full">
+
+                <!-- MODUL 1: MATERI LENGKAP -->
+                <section id="tab-materi" class="tab-content space-y-8">
+                    <!-- Banner -->
+                    <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-physics-dark via-physics-card to-indigo-950 p-6 md:p-8 border border-physics-500/30">
+                        <div class="relative z-10">
+                            <span class="px-3 py-1 rounded-full bg-physics-500/20 text-physics-400 text-xs font-semibold border border-physics-500/30 uppercase tracking-wide">Modul 1</span>
+                            <h2 class="text-2xl md:text-4xl font-extrabold text-white mt-2 mb-3">Sistem Pengukuran Dalam Fisika</h2>
+                            <p class="text-slate-300 text-sm md:text-base max-w-2xl leading-relaxed">
+                                Pengukuran adalah proses membandingkan suatu besaran dengan besaran standar yang sejenis yang ditetapkan sebagai satuan. Pelajari besaran, satuan, ketidakpastian, dan penggunaan alat ukur presisi.
+                            </p>
+                        </div>
+                        <div class="absolute right-4 bottom-0 opacity-10 text-9xl text-physics-400 font-mono pointer-events-none">
+                            [SI]
+                        </div>
+                    </div>
+
+                    <!-- Sub Nav Mencegah Scroll Panjang -->
+                    <div class="flex flex-wrap gap-2 border-b border-slate-800 pb-4">
+                        <a href="#sec-besaran" class="px-4 py-2 rounded-lg bg-slate-800/70 text-xs md:text-sm font-medium hover:bg-physics-500 hover:text-white transition">Besaran & Satuan</a>
+                        <a href="#sec-dimensi" class="px-4 py-2 rounded-lg bg-slate-800/70 text-xs md:text-sm font-medium hover:bg-physics-500 hover:text-white transition">Analisis Dimensi</a>
+                        <a href="#sec-alat-panjang" class="px-4 py-2 rounded-lg bg-slate-800/70 text-xs md:text-sm font-medium hover:bg-physics-500 hover:text-white transition">Alat Ukur Panjang</a>
+                        <a href="#sec-alat-massa" class="px-4 py-2 rounded-lg bg-slate-800/70 text-xs md:text-sm font-medium hover:bg-physics-500 hover:text-white transition">Alat Ukur Massa</a>
+                        <a href="#sec-alat-waktu" class="px-4 py-2 rounded-lg bg-slate-800/70 text-xs md:text-sm font-medium hover:bg-physics-500 hover:text-white transition">Alat Ukur Waktu</a>
+                        <a href="#sec-angka-penting" class="px-4 py-2 rounded-lg bg-slate-800/70 text-xs md:text-sm font-medium hover:bg-physics-500 hover:text-white transition">Angka Penting</a>
+                    </div>
+
+                    <!-- Section Besaran Pokok & Turunan -->
+                    <div id="sec-besaran" class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
+                        <div class="flex items-center gap-3 text-physics-400">
+                            <i class="fa-solid fa-list-ol text-xl"></i>
+                            <h3 class="text-xl font-bold text-white">1. Besaran Pokok dan Besaran Turunan</h3>
+                        </div>
+                        <p class="text-slate-300 text-sm leading-relaxed">
+                            <strong>Besaran Pokok</strong> adalah besaran yang satuannya telah ditetapkan terlebih dahulu berdasarkan kesepakatan internasional dan tidak diturunkan dari besaran lain.
+                        </p>
+
+                        <!-- Tabel Besaran Pokok -->
+                        <div class="overflow-x-auto rounded-xl border border-slate-800 mb-6">
+                            <table class="w-full text-sm text-left text-slate-300">
+                                <thead class="bg-slate-900 text-physics-400 font-semibold uppercase text-xs">
+                                    <tr>
+                                        <th class="p-3">No</th>
+                                        <th class="p-3">Besaran Pokok</th>
+                                        <th class="p-3">Satuan SI</th>
+                                        <th class="p-3">Simbol Satuan</th>
+                                        <th class="p-3">Dimensi</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-800 bg-slate-900/40">
+                                    <tr><td class="p-3">1</td><td class="p-3 font-semibold text-white">Panjang</td><td class="p-3">Meter</td><td class="p-3 font-mono text-physics-400">m</td><td class="p-3 font-mono text-indigo-400">[L]</td></tr>
+                                    <tr><td class="p-3">2</td><td class="p-3 font-semibold text-white">Massa</td><td class="p-3">Kilogram</td><td class="p-3 font-mono text-physics-400">kg</td><td class="p-3 font-mono text-indigo-400">[M]</td></tr>
+                                    <tr><td class="p-3">3</td><td class="p-3 font-semibold text-white">Waktu</td><td class="p-3">Sekon / Detik</td><td class="p-3 font-mono text-physics-400">s</td><td class="p-3 font-mono text-indigo-400">[T]</td></tr>
+                                    <tr><td class="p-3">4</td><td class="p-3 font-semibold text-white">Suhu Termodinamika</td><td class="p-3">Kelvin</td><td class="p-3 font-mono text-physics-400">K</td><td class="p-3 font-mono text-indigo-400">[θ]</td></tr>
+                                    <tr><td class="p-3">5</td><td class="p-3 font-semibold text-white">Kuat Arus Listrik</td><td class="p-3">Ampere</td><td class="p-3 font-mono text-physics-400">A</td><td class="p-3 font-mono text-indigo-400">[I]</td></tr>
+                                    <tr><td class="p-3">6</td><td class="p-3 font-semibold text-white">Intensitas Cahaya</td><td class="p-3">Kandela</td><td class="p-3 font-mono text-physics-400">cd</td><td class="p-3 font-mono text-indigo-400">[J]</td></tr>
+                                    <tr><td class="p-3">7</td><td class="p-3 font-semibold text-white">Jumlah Zat</td><td class="p-3">Mol</td><td class="p-3 font-mono text-physics-400">mol</td><td class="p-3 font-mono text-indigo-400">[N]</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <p class="text-slate-300 text-sm leading-relaxed">
+                            <strong>Besaran Turunan</strong> adalah besaran fisika yang diturunkan dari kombinasi satu atau beberapa besaran pokok. Berikut adalah tabel contoh besaran turunan utama beserta rumus, satuan SI, dan dimensinya:
+                        </p>
+
+                        <!-- Tabel Besaran Turunan (NEW ADDITION) -->
+                        <div class="overflow-x-auto rounded-xl border border-indigo-500/30 shadow-lg">
+                            <table class="w-full text-sm text-left text-slate-300">
+                                <thead class="bg-indigo-950/80 text-indigo-300 font-semibold uppercase text-xs">
+                                    <tr>
+                                        <th class="p-3">No</th>
+                                        <th class="p-3">Besaran Turunan</th>
+                                        <th class="p-3">Rumus / Persamaan</th>
+                                        <th class="p-3">Satuan SI</th>
+                                        <th class="p-3">Simbol Satuan</th>
+                                        <th class="p-3">Dimensi</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-800 bg-slate-900/60">
+                                    <tr>
+                                        <td class="p-3">1</td>
+                                        <td class="p-3 font-semibold text-white">Luas ($A$)</td>
+                                        <td class="p-3 font-mono text-xs">Panjang × Lebar</td>
+                                        <td class="p-3">Meter persegi</td>
+                                        <td class="p-3 font-mono text-physics-400">m²</td>
+                                        <td class="p-3 font-mono text-indigo-400">[L]²</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-3">2</td>
+                                        <td class="p-3 font-semibold text-white">Volume ($V$)</td>
+                                        <td class="p-3 font-mono text-xs">Panjang × Lebar × Tinggi</td>
+                                        <td class="p-3">Meter kubik</td>
+                                        <td class="p-3 font-mono text-physics-400">m³</td>
+                                        <td class="p-3 font-mono text-indigo-400">[L]³</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-3">3</td>
+                                        <td class="p-3 font-semibold text-white">Massa Jenis ($\rho$)</td>
+                                        <td class="p-3 font-mono text-xs">Massa / Volume ($m / V$)</td>
+                                        <td class="p-3">Kilogram per meter kubik</td>
+                                        <td class="p-3 font-mono text-physics-400">kg/m³</td>
+                                        <td class="p-3 font-mono text-indigo-400">[M][L]⁻³</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-3">4</td>
+                                        <td class="p-3 font-semibold text-white">Kecepatan ($v$)</td>
+                                        <td class="p-3 font-mono text-xs">Perpindahan / Waktu ($\Delta s / \Delta t$)</td>
+                                        <td class="p-3">Meter per sekon</td>
+                                        <td class="p-3 font-mono text-physics-400">m/s</td>
+                                        <td class="p-3 font-mono text-indigo-400">[L][T]⁻¹</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-3">5</td>
+                                        <td class="p-3 font-semibold text-white">Percepatan ($a$)</td>
+                                        <td class="p-3 font-mono text-xs">Kecepatan / Waktu ($\Delta v / \Delta t$)</td>
+                                        <td class="p-3">Meter per sekon kuadrat</td>
+                                        <td class="p-3 font-mono text-physics-400">m/s²</td>
+                                        <td class="p-3 font-mono text-indigo-400">[L][T]⁻²</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-3">6</td>
+                                        <td class="p-3 font-semibold text-white">Gaya ($F$)</td>
+                                        <td class="p-3 font-mono text-xs">Massa × Percepatan ($m \cdot a$)</td>
+                                        <td class="p-3">Newton (kg·m/s²)</td>
+                                        <td class="p-3 font-mono text-physics-400">N</td>
+                                        <td class="p-3 font-mono text-indigo-400">[M][L][T]⁻²</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-3">7</td>
+                                        <td class="p-3 font-semibold text-white">Usaha / Energi ($W / E$)</td>
+                                        <td class="p-3 font-mono text-xs">Gaya × Jarak ($F \cdot s$)</td>
+                                        <td class="p-3">Joule (kg·m²/s²)</td>
+                                        <td class="p-3 font-mono text-physics-400">J</td>
+                                        <td class="p-3 font-mono text-indigo-400">[M][L]²[T]⁻²</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-3">8</td>
+                                        <td class="p-3 font-semibold text-white">Daya ($P$)</td>
+                                        <td class="p-3 font-mono text-xs">Usaha / Waktu ($W / t$)</td>
+                                        <td class="p-3">Watt (J/s)</td>
+                                        <td class="p-3 font-mono text-physics-400">W</td>
+                                        <td class="p-3 font-mono text-indigo-400">[M][L]²[T]⁻³</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-3">9</td>
+                                        <td class="p-3 font-semibold text-white">Tekanan ($P$)</td>
+                                        <td class="p-3 font-mono text-xs">Gaya / Luas ($F / A$)</td>
+                                        <td class="p-3">Pascal (N/m²)</td>
+                                        <td class="p-3 font-mono text-physics-400">Pa</td>
+                                        <td class="p-3 font-mono text-indigo-400">[M][L]⁻¹[T]⁻²</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-3">10</td>
+                                        <td class="p-3 font-semibold text-white">Momentum ($p$)</td>
+                                        <td class="p-3 font-mono text-xs">Massa × Kecepatan ($m \cdot v$)</td>
+                                        <td class="p-3">Kilogram meter per sekon</td>
+                                        <td class="p-3 font-mono text-physics-400">kg·m/s</td>
+                                        <td class="p-3 font-mono text-indigo-400">[M][L][T]⁻¹</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Section Dimensi Besaran -->
+                    <div id="sec-dimensi" class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
+                        <div class="flex items-center gap-3 text-physics-400">
+                            <i class="fa-solid fa-square-root-variable text-xl"></i>
+                            <h3 class="text-xl font-bold text-white">2. Dimensi Besaran & Manfaat Analisis Dimensi</h3>
+                        </div>
+                        <p class="text-slate-300 text-sm leading-relaxed">
+                            Dimensi menyatakan cara suatu besaran turunan tersusun atas besaran-besaran pokok. Manfaat analisis dimensi:
+                        </p>
+                        <ul class="list-disc list-inside text-sm text-slate-300 space-y-1 pl-2">
+                            <li>Membuktikan kebenaran suatu persamaan/rumus fisika.</li>
+                            <li>Menentukan satuan dari konstanta fisika.</li>
+                            <li>Menurunkan rumus/persamaan fisika baru dari variabel terikat.</li>
+                        </ul>
+                    </div>
+
+                    <!-- Section Alat Ukur Panjang -->
+                    <div id="sec-alat-panjang" class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
+                        <div class="flex items-center gap-3 text-physics-400">
+                            <i class="fa-solid fa-ruler text-xl"></i>
+                            <h3 class="text-xl font-bold text-white">3. Jenis-Jenis Alat Ukur Panjang</h3>
+                        </div>
+                        <p class="text-slate-300 text-sm leading-relaxed">
+                            Alat ukur panjang digunakan untuk mengukur dimensi linier suatu benda seperti panjang, lebar, tinggi, diameter, dan kedalaman.
+                        </p>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <!-- Penggaris -->
+                            <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800 flex flex-col justify-between space-y-3">
+                                <div class="w-full h-32 bg-slate-950/80 rounded-lg flex items-center justify-center p-2 border border-slate-800/80">
+                                    <svg viewBox="0 0 200 70" class="w-full h-full">
+                                        <rect x="10" y="20" width="180" height="35" rx="3" fill="#1e293b" stroke="#38bdf8" stroke-width="1.5"/>
+                                        <!-- Skala Penggaris -->
+                                        <path d="M 20 20 V 35 M 30 20 V 28 M 40 20 V 28 M 50 20 V 28 M 60 20 V 28 M 70 20 V 35 M 80 20 V 28 M 90 20 V 28 M 100 20 V 28 M 110 20 V 28 M 120 20 V 35 M 130 20 V 28 M 140 20 V 28 M 150 20 V 28 M 160 20 V 28 M 170 20 V 35" stroke="#38bdf8" stroke-width="1.2"/>
+                                        <text x="20" y="46" font-size="8" fill="#e2e8f0" font-family="Fira Code" text-anchor="middle">0</text>
+                                        <text x="70" y="46" font-size="8" fill="#e2e8f0" font-family="Fira Code" text-anchor="middle">1 cm</text>
+                                        <text x="120" y="46" font-size="8" fill="#e2e8f0" font-family="Fira Code" text-anchor="middle">2 cm</text>
+                                        <text x="170" y="46" font-size="8" fill="#e2e8f0" font-family="Fira Code" text-anchor="middle">3 cm</text>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-physics-400 text-sm">Penggaris / Mistar</h4>
+                                    <span class="inline-block mt-1 text-[11px] bg-physics-500/20 text-physics-400 px-2 py-0.5 rounded">Ketelitian: 1 mm (0,1 cm)</span>
+                                    <p class="text-xs text-slate-300 mt-2"><strong>Fungsi:</strong> Mengukur benda-benda berukuran sedang dengan bidang datar.</p>
+                                    <p class="text-xs text-slate-400 mt-1"><strong>Contoh:</strong> Mengukur panjang buku, meja, atau gambar teknik.</p>
+                                </div>
+                            </div>
+
+                            <!-- Jangka Sorong -->
+                            <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800 flex flex-col justify-between space-y-3">
+                                <div class="w-full h-32 bg-slate-950/80 rounded-lg flex items-center justify-center p-2 border border-slate-800/80">
+                                    <svg viewBox="0 0 200 80" class="w-full h-full">
+                                        <!-- Batang Utama -->
+                                        <rect x="20" y="30" width="165" height="20" rx="2" fill="#1e293b" stroke="#64748b" stroke-width="1.5"/>
+                                        <!-- Rahang Tetap Bawah & Atas -->
+                                        <path d="M 30 30 V 68 C 30 72 24 75 18 70 L 20 30 M 30 30 V 10 C 30 8 26 5 22 8 L 20 30" fill="#334155" stroke="#38bdf8" stroke-width="1.5"/>
+                                        <!-- Rahang Geser -->
+                                        <rect x="70" y="24" width="45" height="32" rx="3" fill="rgba(99, 102, 241, 0.4)" stroke="#818cf8" stroke-width="1.5"/>
+                                        <path d="M 70 56 V 72 C 70 75 64 78 58 73 L 70 56" fill="#475569" stroke="#818cf8" stroke-width="1.5"/>
+                                        <!-- Skala Nonius -->
+                                        <line x1="75" y1="48" x2="105" y2="48" stroke="#a5b4fc" stroke-width="1"/>
+                                        <path d="M 75 44 V 50 M 82 44 V 50 M 89 44 V 50 M 96 44 V 50 M 103 44 V 50" stroke="#a5b4fc" stroke-width="1"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-physics-400 text-sm">Jangka Sorong</h4>
+                                    <span class="inline-block mt-1 text-[11px] bg-physics-500/20 text-physics-400 px-2 py-0.5 rounded">Ketelitian: 0,1 mm (0,01 cm)</span>
+                                    <p class="text-xs text-slate-300 mt-2"><strong>Fungsi:</strong> Mengukur diameter luar, diameter dalam tabung, dan kedalaman lubang.</p>
+                                    <p class="text-xs text-slate-400 mt-1"><strong>Contoh:</strong> Mengukur diameter koin, ketebalan cincin, atau kedalaman botol.</p>
+                                </div>
+                            </div>
+
+                            <!-- Mikrometer Sekrup -->
+                            <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800 flex flex-col justify-between space-y-3">
+                                <div class="w-full h-32 bg-slate-950/80 rounded-lg flex items-center justify-center p-2 border border-slate-800/80">
+                                    <svg viewBox="0 0 200 80" class="w-full h-full">
+                                        <!-- C-Frame -->
+                                        <path d="M 30 25 H 70 V 65 H 30 C 15 65 15 25 30 25 Z" fill="none" stroke="#6366f1" stroke-width="5" stroke-linejoin="round"/>
+                                        <!-- Anvil & Spindle -->
+                                        <rect x="25" y="40" width="10" height="10" fill="#94a3b8"/>
+                                        <rect x="45" y="40" width="35" height="10" fill="#cbd5e1"/>
+                                        <!-- Sleeve -->
+                                        <rect x="80" y="37" width="50" height="16" fill="#1e293b" stroke="#818cf8" stroke-width="1"/>
+                                        <line x1="85" y1="45" x2="125" y2="45" stroke="#818cf8" stroke-width="1"/>
+                                        <!-- Thimble & Ratchet -->
+                                        <path d="M 130 32 L 170 35 V 55 L 130 58 Z" fill="#312e81" stroke="#818cf8" stroke-width="1.2"/>
+                                        <rect x="170" y="38" width="15" height="14" rx="2" fill="#475569"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-indigo-400 text-sm">Mikrometer Sekrup</h4>
+                                    <span class="inline-block mt-1 text-[11px] bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded">Ketelitian: 0,01 mm</span>
+                                    <p class="text-xs text-slate-300 mt-2"><strong>Fungsi:</strong> Mengukur ketebalan atau diameter benda-benda yang sangat kecil dan tipis secara presisi.</p>
+                                    <p class="text-xs text-slate-400 mt-1"><strong>Contoh:</strong> Mengukur tebal selembar kertas, kawat halus, atau plat logam.</p>
+                                </div>
+                            </div>
+
+                            <!-- Meteran Roll -->
+                            <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800 flex flex-col justify-between space-y-3">
+                                <div class="w-full h-32 bg-slate-950/80 rounded-lg flex items-center justify-center p-2 border border-slate-800/80">
+                                    <svg viewBox="0 0 200 80" class="w-full h-full">
+                                        <!-- Bodi Roll Meter -->
+                                        <rect x="35" y="20" width="55" height="50" rx="12" fill="#0284c7" stroke="#38bdf8" stroke-width="2"/>
+                                        <circle cx="62" cy="45" r="14" fill="#0f172a" stroke="#38bdf8" stroke-width="1.5"/>
+                                        <path d="M 90 50 H 175" stroke="#f59e0b" stroke-width="12" stroke-linecap="round"/>
+                                        <path d="M 95 47 H 170" stroke="#000" stroke-width="1" stroke-dasharray="3,3"/>
+                                        <!-- Pengait Pita -->
+                                        <path d="M 175 42 V 58 H 180 V 42 Z" fill="#94a3b8"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-indigo-400 text-sm">Meteran Pita / Roll</h4>
+                                    <span class="inline-block mt-1 text-[11px] bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded">Ketelitian: 1 mm</span>
+                                    <p class="text-xs text-slate-300 mt-2"><strong>Fungsi:</strong> Mengukur jarak atau objek berkuran panjang dan melengkung.</p>
+                                    <p class="text-xs text-slate-400 mt-1"><strong>Contoh:</strong> Mengukur lingkar pinggang kain, panjang ruangan, atau lapangan.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section Alat Ukur Massa/Berat -->
+                    <div id="sec-alat-massa" class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
+                        <div class="flex items-center gap-3 text-physics-400">
+                            <i class="fa-solid fa-weight-hanging text-xl"></i>
+                            <h3 class="text-xl font-bold text-white">4. Jenis-Jenis Alat Ukur Massa / Berat</h3>
+                        </div>
+                        <p class="text-slate-300 text-sm leading-relaxed">
+                            Alat ukur massa digunakan untuk mengukur kuantitas materi dalam suatu benda dengan menggunakan asas kesetimbangan atau sensor beban.
+                        </p>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <!-- Neraca Ohaus -->
+                            <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800 flex flex-col justify-between space-y-3">
+                                <div class="w-full h-32 bg-slate-950/80 rounded-lg flex items-center justify-center p-2 border border-slate-800/80">
+                                    <svg viewBox="0 0 200 80" class="w-full h-full">
+                                        <!-- Base -->
+                                        <rect x="25" y="62" width="150" height="10" rx="3" fill="#1e293b" stroke="#a855f7" stroke-width="1.5"/>
+                                        <!-- Piringan Beban -->
+                                        <path d="M 35 30 H 65 L 50 45 Z" fill="#94a3b8"/>
+                                        <line x1="50" y1="45" x2="50" y2="62" stroke="#cbd5e1" stroke-width="2"/>
+                                        <!-- Lengan Neraca & Anting -->
+                                        <rect x="50" y="42" width="120" height="8" fill="#334155" stroke="#a855f7" stroke-width="1"/>
+                                        <circle cx="90" cy="46" r="4" fill="#c084fc"/>
+                                        <circle cx="120" cy="46" r="4" fill="#c084fc"/>
+                                        <circle cx="145" cy="46" r="4" fill="#c084fc"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-purple-400 text-sm">Neraca Ohaus (3/4 Lengan)</h4>
+                                    <span class="inline-block mt-1 text-[11px] bg-purple-500/20 text-purple-400 px-2 py-0.5 rounded">Ketelitian: 0,01 gram</span>
+                                    <p class="text-xs text-slate-300 mt-2"><strong>Fungsi:</strong> Mengukur massa sampel zat atau benda padat di laboratorium fisika/kimia.</p>
+                                    <p class="text-xs text-slate-400 mt-1"><strong>Contoh:</strong> Mengukur massa beban eksperimen atau sampel bahan kimia.</p>
+                                </div>
+                            </div>
+
+                            <!-- Neraca Digital -->
+                            <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800 flex flex-col justify-between space-y-3">
+                                <div class="w-full h-32 bg-slate-950/80 rounded-lg flex items-center justify-center p-2 border border-slate-800/80">
+                                    <svg viewBox="0 0 200 80" class="w-full h-full">
+                                        <!-- Bodi Utama -->
+                                        <rect x="40" y="35" width="120" height="38" rx="6" fill="#0f172a" stroke="#c084fc" stroke-width="1.5"/>
+                                        <!-- Piringan Timbang Stainless -->
+                                        <ellipse cx="100" cy="30" rx="35" ry="10" fill="#94a3b8" stroke="#e2e8f0" stroke-width="1"/>
+                                        <!-- Layar LED Display -->
+                                        <rect x="65" y="47" width="70" height="18" rx="3" fill="#022c22" stroke="#10b981" stroke-width="1"/>
+                                        <text x="100" y="60" font-size="11" fill="#34d399" font-family="Fira Code" font-weight="bold" text-anchor="middle">12.508 g</text>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-purple-400 text-sm">Neraca Digital / Analitis</h4>
+                                    <span class="inline-block mt-1 text-[11px] bg-purple-500/20 text-purple-400 px-2 py-0.5 rounded">Ketelitian: 0,001 g – 0,0001 g</span>
+                                    <p class="text-xs text-slate-300 mt-2"><strong>Fungsi:</strong> Mengukur massa secara sangat akurat dengan layar tampilan digital.</p>
+                                    <p class="text-xs text-slate-400 mt-1"><strong>Contoh:</strong> Penimbangan racikan obat di apotek atau zat peka laboratorium.</p>
+                                </div>
+                            </div>
+
+                            <!-- Neraca Sama Lengan -->
+                            <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800 flex flex-col justify-between space-y-3">
+                                <div class="w-full h-32 bg-slate-950/80 rounded-lg flex items-center justify-center p-2 border border-slate-800/80">
+                                    <svg viewBox="0 0 200 80" class="w-full h-full">
+                                        <!-- Tiang Utama -->
+                                        <rect x="96" y="25" width="8" height="45" fill="#64748b"/>
+                                        <rect x="75" y="68" width="50" height="6" rx="2" fill="#475569"/>
+                                        <!-- Lengan Horisontal -->
+                                        <line x1="35" y1="28" x2="165" y2="28" stroke="#38bdf8" stroke-width="3"/>
+                                        <!-- Tali & Piring Kiri -->
+                                        <line x1="35" y1="28" x2="25" y2="52" stroke="#94a3b8" stroke-width="1"/>
+                                        <line x1="35" y1="28" x2="45" y2="52" stroke="#94a3b8" stroke-width="1"/>
+                                        <path d="M 20 52 H 50" stroke="#38bdf8" stroke-width="2"/>
+                                        <!-- Tali & Piring Kanan -->
+                                        <line x1="165" y1="28" x2="155" y2="52" stroke="#94a3b8" stroke-width="1"/>
+                                        <line x1="165" y1="28" x2="175" y2="52" stroke="#94a3b8" stroke-width="1"/>
+                                        <path d="M 150 52 H 180" stroke="#38bdf8" stroke-width="2"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-physics-400 text-sm">Neraca Sama Lengan</h4>
+                                    <span class="inline-block mt-1 text-[11px] bg-physics-500/20 text-physics-400 px-2 py-0.5 rounded">Ketelitian: 1 gram</span>
+                                    <p class="text-xs text-slate-300 mt-2"><strong>Fungsi:</strong> Membandingkan massa benda dengan anak timbangan standar di kedua piringan.</p>
+                                    <p class="text-xs text-slate-400 mt-1"><strong>Contoh:</strong> Mengukur massa perhiasan atau logam mulia emas.</p>
+                                </div>
+                            </div>
+
+                            <!-- Timbangan Pasar -->
+                            <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800 flex flex-col justify-between space-y-3">
+                                <div class="w-full h-32 bg-slate-950/80 rounded-lg flex items-center justify-center p-2 border border-slate-800/80">
+                                    <svg viewBox="0 0 200 80" class="w-full h-full">
+                                        <!-- Badak Timbangan -->
+                                        <path d="M 40 68 L 55 35 H 145 L 160 68 Z" fill="#1e293b" stroke="#38bdf8" stroke-width="1.5"/>
+                                        <!-- Jarum Jam Analisis Dial -->
+                                        <circle cx="100" cy="50" r="16" fill="#0f172a" stroke="#e2e8f0" stroke-width="1.5"/>
+                                        <line x1="100" y1="50" x2="108" y2="42" stroke="#f43f5e" stroke-width="2"/>
+                                        <!-- Mangkuk Atas -->
+                                        <path d="M 60 22 C 60 33 140 33 140 22 Z" fill="#94a3b8" stroke="#cbd5e1" stroke-width="1.5"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-physics-400 text-sm">Timbangan Duduk / Pasar</h4>
+                                    <span class="inline-block mt-1 text-[11px] bg-physics-500/20 text-physics-400 px-2 py-0.5 rounded">Ketelitian: 100 gram</span>
+                                    <p class="text-xs text-slate-300 mt-2"><strong>Fungsi:</strong> Mengukur benda berkapasitas besar atau komoditas perdagangan.</p>
+                                    <p class="text-xs text-slate-400 mt-1"><strong>Contoh:</strong> Menimbang beras, buah-buahan, dan sembako di pasar.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section Alat Ukur Waktu -->
+                    <div id="sec-alat-waktu" class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
+                        <div class="flex items-center gap-3 text-physics-400">
+                            <i class="fa-solid fa-stopwatch text-xl"></i>
+                            <h3 class="text-xl font-bold text-white">5. Jenis-Jenis Alat Ukur Waktu</h3>
+                        </div>
+                        <p class="text-slate-300 text-sm leading-relaxed">
+                            Alat ukur waktu digunakan untuk mengukur durasi atau interval berlangsungnya suatu peristiwa fisika.
+                        </p>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <!-- Stopwatch Analog -->
+                            <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800 flex flex-col justify-between space-y-3">
+                                <div class="w-full h-32 bg-slate-950/80 rounded-lg flex items-center justify-center p-2 border border-slate-800/80">
+                                    <svg viewBox="0 0 200 80" class="w-full h-full">
+                                        <!-- Crown Button -->
+                                        <rect x="95" y="12" width="10" height="8" fill="#94a3b8"/>
+                                        <circle cx="100" cy="10" r="5" fill="#34d399"/>
+                                        <!-- Body Circle -->
+                                        <circle cx="100" cy="48" r="26" fill="#0f172a" stroke="#34d399" stroke-width="2"/>
+                                        <circle cx="100" cy="48" r="2" fill="#e2e8f0"/>
+                                        <line x1="100" y1="48" x2="112" y2="36" stroke="#f43f5e" stroke-width="1.5"/>
+                                        <!-- Ticks -->
+                                        <circle cx="100" cy="48" r="22" stroke="#64748b" stroke-width="1" stroke-dasharray="2,6" fill="none"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-emerald-400 text-sm">Stopwatch Analog</h4>
+                                    <span class="inline-block mt-1 text-[11px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded">Ketelitian: 0,1 sekon</span>
+                                    <p class="text-xs text-slate-300 mt-2"><strong>Fungsi:</strong> Mengukur selang waktu dengan jarum penunjuk mekanis.</p>
+                                    <p class="text-xs text-slate-400 mt-1"><strong>Contoh:</strong> Mengukur waktu ayunan bandul sederhana atau waktu pelari.</p>
+                                </div>
+                            </div>
+
+                            <!-- Stopwatch Digital -->
+                            <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800 flex flex-col justify-between space-y-3">
+                                <div class="w-full h-32 bg-slate-950/80 rounded-lg flex items-center justify-center p-2 border border-slate-800/80">
+                                    <svg viewBox="0 0 200 80" class="w-full h-full">
+                                        <!-- Body Digital -->
+                                        <rect x="65" y="15" width="70" height="55" rx="14" fill="#064e3b" stroke="#34d399" stroke-width="2"/>
+                                        <!-- Screen Display -->
+                                        <rect x="75" y="28" width="50" height="22" rx="3" fill="#022c22" stroke="#10b981" stroke-width="1"/>
+                                        <text x="100" y="43" font-size="10" fill="#34d399" font-family="Fira Code" font-weight="bold" text-anchor="middle">00:14.82</text>
+                                        <!-- Buttons -->
+                                        <circle cx="78" cy="16" r="4" fill="#f43f5e"/>
+                                        <circle cx="122" cy="16" r="4" fill="#38bdf8"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-emerald-400 text-sm">Stopwatch Digital</h4>
+                                    <span class="inline-block mt-1 text-[11px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded">Ketelitian: 0,01 sekon</span>
+                                    <p class="text-xs text-slate-300 mt-2"><strong>Fungsi:</strong> Mengukur interval waktu peristiwa presisi tinggi dengan tampilan angka numerik.</p>
+                                    <p class="text-xs text-slate-400 mt-1"><strong>Contoh:</strong> Eksperimen fisika laboratorium modern dan kompetisi olahraga.</p>
+                                </div>
+                            </div>
+
+                            <!-- Jam Dinding -->
+                            <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800 flex flex-col justify-between space-y-3">
+                                <div class="w-full h-32 bg-slate-950/80 rounded-lg flex items-center justify-center p-2 border border-slate-800/80">
+                                    <svg viewBox="0 0 200 80" class="w-full h-full">
+                                        <circle cx="100" cy="40" r="28" fill="#1e293b" stroke="#38bdf8" stroke-width="2"/>
+                                        <!-- Numbers -->
+                                        <text x="100" y="22" font-size="7" fill="#e2e8f0" font-weight="bold" text-anchor="middle">12</text>
+                                        <text x="120" y="42" font-size="7" fill="#e2e8f0" font-weight="bold" text-anchor="middle">3</text>
+                                        <text x="100" y="62" font-size="7" fill="#e2e8f0" font-weight="bold" text-anchor="middle">6</text>
+                                        <text x="80" y="42" font-size="7" fill="#e2e8f0" font-weight="bold" text-anchor="middle">9</text>
+                                        <!-- Hands -->
+                                        <line x1="100" y1="40" x2="100" y2="28" stroke="#38bdf8" stroke-width="2"/>
+                                        <line x1="100" y1="40" x2="112" y2="40" stroke="#cbd5e1" stroke-width="1.5"/>
+                                        <line x1="100" y1="40" x2="92" y2="50" stroke="#f43f5e" stroke-width="1"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-physics-400 text-sm">Jam / Arloji Dinding</h4>
+                                    <span class="inline-block mt-1 text-[11px] bg-physics-500/20 text-physics-400 px-2 py-0.5 rounded">Ketelitian: 1 sekon</span>
+                                    <p class="text-xs text-slate-300 mt-2"><strong>Fungsi:</strong> Mengukur waktu dalam kehidupan sehari-hari berdasarkan siklus jam, menit, dan detik.</p>
+                                    <p class="text-xs text-slate-400 mt-1"><strong>Contoh:</strong> Menentukan durasi jam pelajaran atau jadwal kegiatan harian.</p>
+                                </div>
+                            </div>
+
+                            <!-- Jam Atom Cesium -->
+                            <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800 flex flex-col justify-between space-y-3">
+                                <div class="w-full h-32 bg-slate-950/80 rounded-lg flex items-center justify-center p-2 border border-slate-800/80">
+                                    <svg viewBox="0 0 200 80" class="w-full h-full">
+                                        <!-- Atomic Orbit Graphic -->
+                                        <ellipse cx="100" cy="40" rx="35" ry="12" fill="none" stroke="#6366f1" stroke-width="1.2" transform="rotate(30 100 40)"/>
+                                        <ellipse cx="100" cy="40" rx="35" ry="12" fill="none" stroke="#38bdf8" stroke-width="1.2" transform="rotate(-30 100 40)"/>
+                                        <circle cx="100" cy="40" r="8" fill="#818cf8"/>
+                                        <circle cx="100" cy="40" r="4" fill="#a5b4fc"/>
+                                        <circle cx="125" cy="28" r="3" fill="#38bdf8"/>
+                                        <circle cx="75" cy="52" r="3" fill="#818cf8"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-physics-400 text-sm">Jam Atom (Cesium)</h4>
+                                    <span class="inline-block mt-1 text-[11px] bg-physics-500/20 text-physics-400 px-2 py-0.5 rounded">Ketelitian: ~10⁻⁹ sekon</span>
+                                    <p class="text-xs text-slate-300 mt-2"><strong>Fungsi:</strong> Standar internasional pengukuran waktu berdasarkan frekuensi getaran atom Cesium-133.</p>
+                                    <p class="text-xs text-slate-400 mt-1"><strong>Contoh:</strong> Sinkronisasi jam waktu standar dunia (UTC) dan navigasi sistem GPS.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section Angka Penting -->
+                    <div id="sec-angka-penting" class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-3">
+                        <h3 class="text-lg font-bold text-physics-400 flex items-center gap-2">
+                            <i class="fa-solid fa-calculator"></i> 6. Aturan Angka Penting (AP) & Notasi Ilmiah
+                        </h3>
+                        <ul class="text-xs text-slate-300 space-y-2 leading-relaxed">
+                            <li>• <strong>Semua angka bukan nol</strong> adalah AP (contoh: 245,6 -> 4 AP).</li>
+                            <li>• <strong>Angka nol di antara angka bukan nol</strong> adalah AP (contoh: 4005 -> 4 AP).</li>
+                            <li>• <strong>Angka nol di depan angka bukan nol</strong> BUKAN AP (contoh: 0,0025 -> 2 AP).</li>
+                            <li>• <strong>Angka nol di belakang koma desimal</strong> adalah AP (contoh: 12,00 -> 4 AP).</li>
+                            <li>• <strong>Operasi Penjumlahan/Pengurangan:</strong> Hasil mengikuti angka desimal (dibelakang koma) paling sedikit.</li>
+                            <li>• <strong>Operasi Perkalian/Pembagian:</strong> Hasil mengikuti jumlah AP paling sedikit dari bilangan yang dioperasikan.</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <!-- MODUL 2: SIMULASI INTERAKTIF (LAB MAYA) -->
+                <section id="tab-simulasi" class="tab-content hidden space-y-6">
+                    <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                        <div>
+                            <span class="px-3 py-1 rounded-full bg-physics-500/20 text-physics-400 text-xs font-semibold border border-physics-500/30 uppercase tracking-wide">Modul 2</span>
+                            <h2 class="text-2xl md:text-3xl font-extrabold text-white mt-1">Laboratorium Maya Pengukuran</h2>
+                        </div>
+                        
+                        <!-- Toggle Simulasi Switcher -->
+                        <div class="flex p-1 bg-slate-900 rounded-xl border border-slate-800">
+                            <button onclick="switchSim('jangka')" id="btn-sim-jangka" class="sim-nav-btn active px-4 py-2 rounded-lg text-xs md:text-sm font-semibold transition bg-physics-500 text-white">Jangka Sorong</button>
+                            <button onclick="switchSim('mikro')" id="btn-sim-mikro" class="sim-nav-btn px-4 py-2 rounded-lg text-xs md:text-sm font-semibold text-slate-400 hover:text-white transition">Mikrometer Sekrup</button>
+                            <button onclick="switchSim('mistar')" id="btn-sim-mistar" class="sim-nav-btn px-4 py-2 rounded-lg text-xs md:text-sm font-semibold text-slate-400 hover:text-white transition">Mistar Panjang</button>
+                        </div>
+                    </div>
+
+                    <!-- SIMULASI 1: JANGKA SORONG -->
+                    <div id="sim-container-jangka" class="sim-panel glass-panel p-6 rounded-3xl border border-slate-800 space-y-6">
+                        <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+                            <h3 class="font-bold text-lg text-physics-400 flex items-center gap-2">
+                                <i class="fa-solid fa-sliders"></i> Simulasi Interaktif Jangka Sorong (NST: 0,01 cm)
+                            </h3>
+                            <button onclick="randomizeJangka()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-physics-400 font-semibold border border-slate-700">
+                                <i class="fa-solid fa-dice mr-1"></i> Acak Posisi
+                            </button>
+                        </div>
+
+                        <!-- Canvas Display Visual Jangka Sorong -->
+                        <div class="w-full bg-slate-950 rounded-2xl p-4 border border-slate-800 flex justify-center items-center overflow-x-auto min-h-[220px]">
+                            <canvas id="canvas-jangka" width="700" height="180" class="max-w-full"></canvas>
+                        </div>
+
+                        <!-- Slider Controls & Pembacaan -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="space-y-4 bg-slate-900/60 p-5 rounded-2xl border border-slate-800">
+                                <div>
+                                    <div class="flex justify-between text-sm mb-2">
+                                        <label class="text-slate-300 font-medium">Geser Rahang Geser (Skala):</label>
+                                        <span id="label-val-jangka" class="font-mono text-physics-400 font-bold">2.45 cm</span>
+                                    </div>
+                                    <input type="range" id="slider-jangka" min="0" max="6.0" step="0.01" value="2.45" oninput="updateJangka(this.value)" class="w-full cursor-pointer">
+                                </div>
+                                <p class="text-xs text-slate-400">
+                                    <i class="fa-solid fa-lightbulb text-amber-400 mr-1"></i> Geser slider untuk mensimulasikan pergeseran rahang ukur jangka sorong.
+                                </p>
+                            </div>
+
+                            <div class="bg-physics-dark/90 p-5 rounded-2xl border border-physics-500/30 flex flex-col justify-between">
+                                <h4 class="text-xs uppercase font-bold text-physics-400 tracking-wider">Hasil Analisis Pembacaan</h4>
+                                <div class="space-y-2 my-2 font-mono text-sm">
+                                    <div class="flex justify-between border-b border-slate-800 pb-1">
+                                        <span class="text-slate-400">Skala Utama (SU):</span>
+                                        <span id="su-jangka" class="text-white font-bold">2.40 cm</span>
+                                    </div>
+                                    <div class="flex justify-between border-b border-slate-800 pb-1">
+                                        <span class="text-slate-400">Skala Nonius (SN):</span>
+                                        <span id="sn-jangka" class="text-white font-bold">5 × 0.01 = 0.05 cm</span>
+                                    </div>
+                                    <div class="flex justify-between text-base pt-1">
+                                        <span class="text-physics-400 font-bold">Total Pembacaan:</span>
+                                        <span id="total-jangka" class="text-physics-400 font-extrabold">2.45 cm</span>
+                                    </div>
+                                </div>
+                                <p class="text-xs text-slate-400 italic">Rumus: SU + (SN × 0,01 cm)</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SIMULASI 2: MIKROMETER SEKRUP -->
+                    <div id="sim-container-mikro" class="sim-panel hidden glass-panel p-6 rounded-3xl border border-slate-800 space-y-6">
+                        <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+                            <h3 class="font-bold text-lg text-indigo-400 flex items-center gap-2">
+                                <i class="fa-solid fa-gear"></i> Simulasi Interaktif Mikrometer Sekrup (NST: 0,01 mm)
+                            </h3>
+                            <button onclick="randomizeMikro()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-indigo-400 font-semibold border border-slate-700">
+                                <i class="fa-solid fa-dice mr-1"></i> Acak Posisi
+                            </button>
+                        </div>
+
+                        <!-- Canvas Display Visual Mikrometer Sekrup -->
+                        <div class="w-full bg-slate-950 rounded-2xl p-4 border border-slate-800 flex justify-center items-center overflow-x-auto min-h-[220px]">
+                            <canvas id="canvas-mikro" width="700" height="180" class="max-w-full"></canvas>
+                        </div>
+
+                        <!-- Slider Controls & Pembacaan -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="space-y-4 bg-slate-900/60 p-5 rounded-2xl border border-slate-800">
+                                <div>
+                                    <div class="flex justify-between text-sm mb-2">
+                                        <label class="text-slate-300 font-medium">Putar Thimble (Skala):</label>
+                                        <span id="label-val-mikro" class="font-mono text-indigo-400 font-bold">4.38 mm</span>
+                                    </div>
+                                    <input type="range" id="slider-mikro" min="0" max="10.0" step="0.01" value="4.38" oninput="updateMikro(this.value)" class="w-full cursor-pointer">
+                                </div>
+                                <p class="text-xs text-slate-400">
+                                    <i class="fa-solid fa-lightbulb text-indigo-400 mr-1"></i> Geser slider untuk memutar selubung luar (*thimble*) mikrometer sekrup.
+                                </p>
+                            </div>
+
+                            <div class="bg-physics-dark/90 p-5 rounded-2xl border border-indigo-500/30 flex flex-col justify-between">
+                                <h4 class="text-xs uppercase font-bold text-indigo-400 tracking-wider">Hasil Analisis Pembacaan</h4>
+                                <div class="space-y-2 my-2 font-mono text-sm">
+                                    <div class="flex justify-between border-b border-slate-800 pb-1">
+                                        <span class="text-slate-400">Skala Utama (SU):</span>
+                                        <span id="su-mikro" class="text-white font-bold">4.00 mm</span>
+                                    </div>
+                                    <div class="flex justify-between border-b border-slate-800 pb-1">
+                                        <span class="text-slate-400">Skala Putar (SP):</span>
+                                        <span id="sp-mikro" class="text-white fo
